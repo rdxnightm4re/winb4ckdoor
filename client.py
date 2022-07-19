@@ -1,7 +1,4 @@
 import socket
-import os
-import time
-import tqdm
 import tools 
 
 
@@ -18,7 +15,7 @@ def main():
 
     #SERVER DATA 
     SERVER_IP = "192.168.1.74"
-    SERVER_PORT = 80
+    SERVER_PORT = 8080
     
     CLIENT.settimeout(20)
     
@@ -33,5 +30,8 @@ def main():
 
     print(f"Connection with {SERVER_IP} on port {SERVER_PORT}")
     tools.receive_file(BUFFER_SIZE,CLIENT)
+
+    CLIENT.close()
+    print(f"Connection with {SERVER_IP} closed.")
 
 main()
