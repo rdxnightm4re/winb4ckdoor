@@ -21,7 +21,17 @@ def main():
     SERVER_PORT = 80
     
     CLIENT.settimeout(20)
-    CLIENT.connect((SERVER_IP,SERVER_PORT))    
-    print(f"Connection with {SERVER_IP} on {SERVER_PORT}")
+    
+    print(f"Stablishing connection with {SERVER_IP} on port {SERVER_PORT}")
+
+    try:
+        CLIENT.connect((SERVER_IP,SERVER_PORT))    
+    except TimeoutError:
+        print(f"Connection timeout with {SERVER_IP}")
+        CLIENT.close()
+        exit()
+
+    print(f"Connection with {SERVER_IP} on port {SERVER_PORT}")
+    tools.receive_file(BUFFER_SIZE,CLIENT)
 
 main()

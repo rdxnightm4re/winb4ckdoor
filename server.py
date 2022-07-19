@@ -1,7 +1,4 @@
 import socket
-import time
-import os
-import tqdm
 import tools
         
 def main(): 
@@ -17,7 +14,7 @@ def main():
     connection,address = SERVER.accept()
     
     print(f"Connection with {address[0]} stablished")
-    send_file("test.txt",BUFFER_SIZE,SERVER)
+    tools.send_file("test.txt",BUFFER_SIZE,connection)
 
 
     

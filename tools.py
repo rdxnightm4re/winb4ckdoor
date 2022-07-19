@@ -2,6 +2,9 @@ import tqdm
 import os
 import socket
 
+def command_line(): 
+    pass
+
 def send_file(filename,buffer_size,server,separator="<SEPARATOR>"):
     print(f"Sending '{filename}'") 
     file_size = os.path.getsize(filename)
@@ -9,7 +12,7 @@ def send_file(filename,buffer_size,server,separator="<SEPARATOR>"):
     server.send(f"{filename}{separator}{file_size}".encode())
 
     progress = tqdm.tqdm(
-        range(filesize),
+        range(file_size),
         f"Sending {filename}", 
         unit="B", 
         unit_scale=True, 
@@ -25,17 +28,19 @@ def send_file(filename,buffer_size,server,separator="<SEPARATOR>"):
 
 
 def receive_file(buffer_size,client,separator="<SEPARATOR>",):
+    print("Receiving data..")
     encoding = 'utf-8' 
-    file_data = client.recv(buffer_size).decode()
+    file_data = client.recv(buffer_size).decode(encoding)
     #ADD TRY CATCH 
-    filename,filesize = file_data.split(separator)
+    filename,file_size = file_data.split(separator)
+    #print(file_data)
     # remove absolute path if there is
     filename = os.path.basename(filename)
-    filesize = int(file_size)
+    file_size = int(file_size)
 
     progress = tqdm.tqdm(
-        range(filesize),
-        f"Sending {filename}", 
+        range(file_size),
+        f"Receiving {filename}", 
         unit="B", 
         unit_scale=True, 
         unit_divisor=1024)
