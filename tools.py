@@ -5,6 +5,19 @@ import GPUtil
 import socket
 import psutil
 
+def receive_data(connection,address,buffer_size):
+    while True: 
+        data = connection.recv(buffer_size).decode()
+        if data:
+            print(f"[{address}] {data}")        
+    
+
+def send_data(connection,address,data):
+    try:
+        connection.sendall(data.encode())
+    except Exception as exception:
+        print(f"[-] Connection with {address} lost")
+
 
 def get_local_ip(client,hostname):
     
@@ -18,6 +31,7 @@ def get_local_ip(client,hostname):
         udp_socket.close()
     
     return local_ip
+
 
 def get_system_info():
     uname = platform.uname()

@@ -2,8 +2,6 @@ import socket
 import tools 
 import threading
 
-
-
 def main():
     CLIENT=socket.socket(
         socket.AF_INET,
@@ -37,9 +35,11 @@ def main():
     system_details = tools.get_system_info().encode()
     CLIENT.send(system_details)
 
-    while True:
-        data = CLIENT.recv(BUFFER_SIZE)
-        print(data)
+    receive_data_process = mp.Process(
+    target=tools.receive_data,
+    args=CLIENT,LOCAL_IP,
+    BUFFER_SIZE
+    )
 
 
     CLIENT.close()
