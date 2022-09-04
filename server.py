@@ -2,24 +2,30 @@ import socket
 import tools
 import time 
 import concurrent.futures as cf
-import threading
 import multiprocessing as mp
 
-def wait_for_connections(server,buffer_size): 
+def handle_connections(server,buffer_size,active_connections): 
     #ACCEPT ANY CONNECTION REQUEST
     connection,address = server.accept()
-    print(f"[+] Connection with {address[0]} stablished")
-    
+
+    #IF LOCAL IP IN ACTIVE CONNECTIONS DENY
+    if address[0] in active_connections.keys():
+        active_connections[address[0]][1].terminate()
+        del active_connections[address[0]]
+        print(f"[+] Connection with {address[0]} restablished")
+    else:
+        print(f"[+] New connection with {address[0]}")
+
     #SEND SECRET MESSAGE (BASE64)
-    connection.sendall(b'U295IGVsIGRpb3MgZGUgbGEgZGVzdHJ1Y2Npb24geSBjcmVhY2lvbi4K')
-    
+    #connection.sendall(b'U295IGVsIGRpb3MgZGUgbGEgZGVzdHJ1Y2Npb24geSBjcmVhY2lvbi4K')
+
     #PROCESS TO RECEIVE DATA (PARALELISM)
     process = mp.Process(
     target=tools.receive_data,
-    args=(connection,address,buffer_size,)
+    args=(connection,address[0],buffer_size,)
     )
 
-    return connection,process
+    return connection,address,process
 
 
 def main(): 
@@ -36,21 +42,32 @@ def main():
     SERVER.listen(1)
 
     #WAIT FOR CONNECTIONS IN A DIFFERENT PROCESS
-    connections = list()
-    processes = list()
+    active_connections = dict()
 
     while True:
+        connections_count = len(active_connections)
+
         try:
             with cf.ThreadPoolExecutor() as executor: 
-                connection_info = executor.submit(wait_for_connections,SERVER,BUFFER_SIZE)
-                connection_info = connection_info.result()
+                connection_info = executor.submit(
+                handle_connections,
+                SERVER,BUFFER_SIZE,
+                active_connections
+                )
+                
+                connection_info = connection_info.result()   
 
-                connection = connection_info[0]
-                proccess = connection_info[1]
+                if connection_info:
+                    #GATHER CONNECTION INFO
+                    connection = connection_info[0]
+                    address = connection_info[1]         
+                    process = connection_info[2]
 
-                connections.append(connection)
-                processes.append(process)
-                process.start()
+                    #ADD TO ACTIVE CONNECTIONS DICT
+                    active_connections[address] = [connection,process]
+
+                    #START RECEIVING DATA IN ANOTHER PROCESS
+                    process.start()
 
         except Exception as exception:
             print("Something went wrong :(")
@@ -60,5 +77,5 @@ def main():
                 print(f"Terminating [{process}]") 
                 process.terminate() 
             
-
-main()
+if __name__ == "__main__":
+    main()

